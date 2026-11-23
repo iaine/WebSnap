@@ -1,0 +1,45 @@
+# Builds WebSnap for Apple Silicon Macs, Intel Macs and Windows.
+# Save as .github/workflows/build.yml in your GitHub repository.
+# Run it from the Actions tab ("Run workflow"), or push a tag like v1.0.
+# The zips appear under "Artifacts" on the finished run.
+
+name: Build WebSnap
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15          # Apple Silicon (arm64)
+          - os: macos-15-intel    # Intel Mac (x86_64)
+          - os: windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: bash build_macos.sh
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: build_windows.bat
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WebSnap-${{ matrix.os }}
+          path: dist/WebSnap-*.zip
+          if-no-files-found: error
